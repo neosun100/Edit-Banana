@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Banana — Image to DrawIO</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2333;--card:#21262d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--accent:#6c5ce7;--accent2:#a29bfe;--green:#3fb950;--red:#f85149;--orange:#d29922;--blue:#58a6ff;--radius:10px;--shadow:0 4px 20px rgba(0,0,0,.4)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--bg2);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header h1{font-size:1.4em;background:linear-gradient(135deg,#f9ca24,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .sub{color:var(--text2);font-size:.8em}
+.hdr-r{display:flex;align-items:center;gap:10px}
+select.lang{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:.8em}
+.gpu-badge{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:.78em;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer}
+.gpu-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--text2)}
+.gpu-badge .dot.on{background:var(--green)}
+.main{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h2{font-size:1em;margin-bottom:12px;color:var(--accent2)}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text2)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);color:var(--text)}
+.drop-zone.has-file{border-color:var(--green);border-style:solid}
+.drop-zone input{display:none}
+.preview-img{max-width:100%;max-height:300px;border-radius:8px;margin-top:12px;display:none}
+.params{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:.8em;color:var(--text2)}
+.fg input,.fg select{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:.85em}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
+.fg .hint{font-size:.7em;color:var(--text2)}
+.chk{display:flex;align-items:center;gap:6px;font-size:.85em;color:var(--text2)}
+.chk input{accent-color:var(--accent)}
+.btn{padding:10px 24px;border-radius:8px;border:none;cursor:pointer;font-size:.9em;font-weight:600;transition:all .2s;font-family:inherit}
+.btn-p{background:linear-gradient(135deg,var(--accent),#7c6cf0);color:#fff}
+.btn-p:hover{box-shadow:0 4px 15px rgba(108,92,231,.4)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:6px 14px;font-size:.8em;border-radius:6px}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-o:hover{border-color:var(--accent);color:var(--text)}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.status{padding:10px 14px;border-radius:8px;font-size:.85em;margin-top:12px;display:none}
+.status.info{display:block;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);color:var(--blue)}
+.status.ok{display:block;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);color:var(--green)}
+.status.err{display:block;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);color:var(--red)}
+.status.load{display:block;background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.3);color:var(--accent2)}
+.progress{height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden;display:none}
+.progress .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;width:0;transition:width .3s}
+.result-area{display:none}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.metric{text-align:center;background:var(--bg3);border-radius:8px;padding:12px}
+.metric .v{font-size:1.3em;font-weight:700;color:var(--accent2)}
+.metric .l{font-size:.72em;color:var(--text2);margin-top:2px}
+.xml-preview{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;max-height:200px;overflow:auto;font-family:monospace;font-size:.78em;color:var(--text2);white-space:pre-wrap;word-break:break-all}
+.footer{text-align:center;padding:16px;font-size:.72em;color:var(--text2);border-top:1px solid var(--border);margin-top:24px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--accent2);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){.params{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1>🍌 Edit Banana</h1><span class="sub" data-i18n="subtitle">Image/PDF → Editable DrawIO XML</span></div>
+  <div class="hdr-r">
+    <select class="lang" id="lang" onchange="setLang(this.value)">
+      <option value="en">English</option><option value="zh">简体中文</option>
+      <option value="tw">繁體中文</option><option value="ja">日本語</option>
+    </select>
+    <div class="gpu-badge" onclick="refreshStatus()" title="Click to refresh">
+      <span class="dot" id="gpuDot"></span><span id="gpuText">GPU: --</span>
+    </div>
+    <button class="btn btn-sm btn-o" onclick="gpuOffload()" data-i18n="offload">🔻 Offload</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Upload -->
+  <div class="card">
+    <h2 data-i18n="upload_title">📤 Upload Image / PDF</h2>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div id="dropText" data-i18n="drop_hint">Drop image/PDF here or click to browse<br><small>PNG, JPG, PDF, BMP, TIFF, WebP</small></div>
+      <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.pdf,.bmp,.tiff,.webp">
+    </div>
+    <img class="preview-img" id="preview">
+  </div>
+
+  <!-- Parameters -->
+  <div class="card">
+    <h2 data-i18n="params_title">⚙️ Parameters</h2>
+    <div class="params">
+      <div class="fg">
+        <label data-i18n="p_score">Score Threshold</label>
+        <input type="number" id="pScore" value="0.5" min="0" max="1" step="0.05">
+        <span class="hint" data-i18n="p_score_hint">SAM3 confidence threshold (0-1)</span>
+      </div>
+      <div class="fg">
+        <label data-i18n="p_epsilon">Epsilon Factor</label>
+        <input type="number" id="pEpsilon" value="0.02" min="0" max="0.1" step="0.005">
+        <span class="hint" data-i18n="p_epsilon_hint">Polygon approximation factor</span>
+      </div>
+      <div class="fg">
+        <label data-i18n="p_area">Min Area</label>
+        <input type="number" id="pArea" value="100" min="0" step="10">
+        <span class="hint" data-i18n="p_area_hint">Minimum element area in pixels</span>
+      </div>
+      <div class="fg" style="justify-content:center;gap:10px">
+        <div class="chk"><input type="checkbox" id="pText" checked><label for="pText" data-i18n="p_text">OCR Text</label></div>
+        <div class="chk"><input type="checkbox" id="pRefine"><label for="pRefine" data-i18n="p_refine">Refinement</label></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="btn-row">
+    <button class="btn btn-p" id="btnConvert" onclick="doConvert()" disabled data-i18n="convert">🚀 Convert</button>
+    <button class="btn btn-o" id="btnDownload" onclick="doDownload()" style="display:none" data-i18n="download">⬇️ Download .drawio</button>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div class="progress" id="progress"><div class="fill" id="progressFill"></div></div>
+
+  <!-- Results -->
+  <div class="result-area" id="resultArea">
+    <div class="card">
+      <h2 data-i18n="result_title">📊 Result</h2>
+      <div class="metrics" id="metrics"></div>
+      <div class="xml-preview" id="xmlPreview"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Edit Banana v1.0.0 · <a href="/docs" style="color:var(--accent2)">API Docs</a> · Apache 2.0</div>
+
+<script>
+// ─── i18n ─────────────────────────────────────────────
+const I18N={
+en:{subtitle:"Image/PDF → Editable DrawIO XML",upload_title:"📤 Upload Image / PDF",drop_hint:'Drop image/PDF here or click to browse<br><small>PNG, JPG, PDF, BMP, TIFF, WebP</small>',params_title:"⚙️ Parameters",p_score:"Score Threshold",p_score_hint:"SAM3 confidence threshold (0-1)",p_epsilon:"Epsilon Factor",p_epsilon_hint:"Polygon approximation factor",p_area:"Min Area",p_area_hint:"Minimum element area in pixels",p_text:"OCR Text",p_refine:"Refinement",convert:"🚀 Convert",download:"⬇️ Download .drawio",result_title:"📊 Result",offload:"🔻 Offload",converting:"Converting... This may take a moment for first request (model loading)",done:"✅ Conversion complete!",err:"❌ Error: ",m_elements:"Elements",m_time:"Time (s)",m_file:"File"},
+zh:{subtitle:"图片/PDF → 可编辑 DrawIO XML",upload_title:"📤 上传图片 / PDF",drop_hint:'拖拽图片/PDF到此处或点击选择<br><small>PNG, JPG, PDF, BMP, TIFF, WebP</small>',params_title:"⚙️ 参数设置",p_score:"置信度阈值",p_score_hint:"SAM3 分割置信度 (0-1)",p_epsilon:"多边形因子",p_epsilon_hint:"多边形近似因子",p_area:"最小面积",p_area_hint:"最小元素面积（像素）",p_text:"OCR 文字",p_refine:"精炼优化",convert:"🚀 开始转换",download:"⬇️ 下载 .drawio",result_title:"📊 转换结果",offload:"🔻 释放显存",converting:"转换中...首次请求需加载模型，请稍候",done:"✅ 转换完成！",err:"❌ 错误：",m_elements:"元素数",m_time:"耗时(秒)",m_file:"文件"},
+tw:{subtitle:"圖片/PDF → 可編輯 DrawIO XML",upload_title:"📤 上傳圖片 / PDF",drop_hint:'拖曳圖片/PDF到此處或點擊選擇<br><small>PNG, JPG, PDF, BMP, TIFF, WebP</small>',params_title:"⚙️ 參數設定",p_score:"信心閾值",p_score_hint:"SAM3 分割信心度 (0-1)",p_epsilon:"多邊形因子",p_epsilon_hint:"多邊形近似因子",p_area:"最小面積",p_area_hint:"最小元素面積（像素）",p_text:"OCR 文字",p_refine:"精煉優化",convert:"🚀 開始轉換",download:"⬇️ 下載 .drawio",result_title:"📊 轉換結果",offload:"🔻 釋放顯存",converting:"轉換中...首次請求需載入模型，請稍候",done:"✅ 轉換完成！",err:"❌ 錯誤：",m_elements:"元素數",m_time:"耗時(秒)",m_file:"檔案"},
+ja:{subtitle:"画像/PDF → 編集可能な DrawIO XML",upload_title:"📤 画像 / PDF アップロード",drop_hint:'画像/PDFをドロップまたはクリック<br><small>PNG, JPG, PDF, BMP, TIFF, WebP</small>',params_title:"⚙️ パラメータ",p_score:"スコア閾値",p_score_hint:"SAM3 信頼度閾値 (0-1)",p_epsilon:"イプシロン係数",p_epsilon_hint:"ポリゴン近似係数",p_area:"最小面積",p_area_hint:"最小要素面積（ピクセル）",p_text:"OCR テキスト",p_refine:"リファインメント",convert:"🚀 変換",download:"⬇️ .drawio ダウンロード",result_title:"📊 結果",offload:"🔻 GPU解放",converting:"変換中...初回はモデル読み込みのため時間がかかります",done:"✅ 変換完了！",err:"❌ エラー：",m_elements:"要素数",m_time:"時間(秒)",m_file:"ファイル"}
+};
+let curLang='en';
+function setLang(l){curLang=l;document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(I18N[l]&&I18N[l][k])el.innerHTML=I18N[l][k];})}
+
+// ─── File upload ──────────────────────────────────────
+let selectedFile=null, lastXml='';
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput'),pv=document.getElementById('preview');
+fi.addEventListener('change',e=>{if(e.target.files[0])pickFile(e.target.files[0])});
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])pickFile(e.dataTransfer.files[0])});
+function pickFile(f){
+  selectedFile=f;dz.classList.add('has-file');
+  document.getElementById('dropText').textContent=f.name+' ('+Math.round(f.size/1024)+'KB)';
+  document.getElementById('btnConvert').disabled=false;
+  if(f.type.startsWith('image/')){pv.src=URL.createObjectURL(f);pv.style.display='block'}else{pv.style.display='none'}
+}
+
+// ─── Convert ──────────────────────────────────────────
+async function doConvert(){
+  if(!selectedFile)return;
+  const st=document.getElementById('status'),pg=document.getElementById('progress'),pf=document.getElementById('progressFill');
+  const btn=document.getElementById('btnConvert');
+  btn.disabled=true;st.className='status load';st.textContent='⏳ '+(I18N[curLang]?.converting||'Converting...');
+  pg.style.display='block';pf.style.width='30%';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('btnDownload').style.display='none';
+
+  const fd=new FormData();
+  fd.append('file',selectedFile);
+  fd.append('with_text',document.getElementById('pText').checked);
+  fd.append('with_refinement',document.getElementById('pRefine').checked);
+  const sc=parseFloat(document.getElementById('pScore').value);
+  const ep=parseFloat(document.getElementById('pEpsilon').value);
+  const ar=parseInt(document.getElementById('pArea').value);
+  if(!isNaN(sc))fd.append('score_threshold',sc);
+  if(!isNaN(ep))fd.append('epsilon_factor',ep);
+  if(!isNaN(ar))fd.append('min_area',ar);
+
+  try{
+    pf.style.width='60%';
+    const r=await fetch('/api/convert',{method:'POST',body:fd});
+    pf.style.width='90%';
+    if(!r.ok){const e=await r.json().catch(()=>({error:'Server error'}));throw new Error(e.error||e.detail||'Failed')}
+    const d=await r.json();
+    pf.style.width='100%';
+    lastXml=d.xml_content||'';
+    st.className='status ok';st.textContent=I18N[curLang]?.done||'Done!';
+    // Show results
+    const ra=document.getElementById('resultArea');ra.style.display='block';
+    document.getElementById('metrics').innerHTML=`
+      <div class="metric"><div class="v">${d.elements_count||0}</div><div class="l">${I18N[curLang]?.m_elements||'Elements'}</div></div>
+      <div class="metric"><div class="v">${d.processing_time||'-'}</div><div class="l">${I18N[curLang]?.m_time||'Time (s)'}</div></div>
+      <div class="metric"><div class="v">${selectedFile.name}</div><div class="l">${I18N[curLang]?.m_file||'File'}</div></div>`;
+    document.getElementById('xmlPreview').textContent=lastXml.substring(0,2000)+(lastXml.length>2000?'\n...':'');
+    document.getElementById('btnDownload').style.display='inline-block';
+  }catch(e){
+    st.className='status err';st.textContent=(I18N[curLang]?.err||'Error: ')+e.message;
+  }finally{
+    btn.disabled=false;setTimeout(()=>{pg.style.display='none';pf.style.width='0'},1500);
+  }
+}
+
+function doDownload(){
+  if(!lastXml)return;
+  const b=new Blob([lastXml],{type:'application/xml'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=(selectedFile?.name?.replace(/\.[^.]+$/,'')||'output')+'.drawio';
+  a.click();
+}
+
+// ─── GPU ──────────────────────────────────────────────
+async function refreshStatus(){
+  try{
+    const r=await fetch('/health');const d=await r.json();
+    const dot=document.getElementById('gpuDot'),txt=document.getElementById('gpuText');
+    if(d.gpu?.available){
+      dot.classList.toggle('on',d.model_loaded);
+      txt.textContent=`GPU: ${d.gpu.memory_used_gb||0}/${d.gpu.memory_total_gb||0} GB`;
+    }else{txt.textContent='CPU mode';dot.classList.remove('on')}
+  }catch(e){document.getElementById('gpuText').textContent='offline'}
+}
+async function gpuOffload(){
+  try{await fetch('/api/gpu-offload',{method:'POST'});refreshStatus()}catch(e){}
+}
+refreshStatus();setInterval(refreshStatus,30000);
+</script>
+</body>
+</html>

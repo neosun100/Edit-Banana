@@ -216,8 +216,8 @@ class SAM3Model(ModelWrapper):
     
     def __init__(self, checkpoint_path: str, bpe_path: str, device: str = None):
         super().__init__()
-        self.checkpoint_path = checkpoint_path
-        self.bpe_path = bpe_path
+        self.checkpoint_path = checkpoint_path or None
+        self.bpe_path = bpe_path or None
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self._processor = None
         
@@ -239,7 +239,7 @@ class SAM3Model(ModelWrapper):
         self._model = build_sam3_image_model(
             bpe_path=self.bpe_path,
             checkpoint_path=self.checkpoint_path,
-            load_from_HF=False,
+            load_from_HF=(self.checkpoint_path is None),
             device=self.device
         )
         self._processor = Sam3Processor(self._model)
@@ -379,8 +379,8 @@ class Sam3InfoExtractor(BaseProcessor):
         
         # 加载SAM3模型配置
         sam3_config = ConfigLoader.get_sam3_config()
-        self._checkpoint_path = checkpoint_path or sam3_config.get('checkpoint_path', '')
-        self._bpe_path = bpe_path or sam3_config.get('bpe_path', '')
+        self._checkpoint_path = checkpoint_path or sam3_config.get('checkpoint_path') or None
+        self._bpe_path = bpe_path or sam3_config.get('bpe_path') or None
         
         self._sam3_model: Optional[SAM3Model] = None
         self._current_image_path: Optional[str] = None

@@ -93,14 +93,16 @@ class Sam3Runtime:
         self.score_threshold = sam3_cfg.get("score_threshold", 0.5)
         self.epsilon_factor = sam3_cfg.get("epsilon_factor", 0.02)
         self.min_area = sam3_cfg.get("min_area", 100)
-        checkpoint_path = sam3_cfg.get("checkpoint_path")
-        bpe_path = sam3_cfg.get("bpe_path")
+        checkpoint_path = sam3_cfg.get("checkpoint_path") or None
+        bpe_path = sam3_cfg.get("bpe_path") or None
+        # Auto-download from HF if no checkpoint specified
+        use_hf = checkpoint_path is None
 
         # Load once and keep in memory
         self.model = build_sam3_image_model(
             bpe_path=bpe_path,
             checkpoint_path=checkpoint_path,
-            load_from_HF=False,
+            load_from_HF=use_hf,
             device=device,
         )
         self.processor = Sam3Processor(self.model, device=device)

@@ -1,0 +1,32 @@
+services:
+  edit-banana:
+    image: neosun/edit-banana:latest
+    build: .
+    container_name: edit-banana
+    ports:
+      - "0.0.0.0:8450:8450"
+      - "0.0.0.0:8451:8451"
+      - "0.0.0.0:8452:8452"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${GPU_ID:-0}
+      - PORT=8450
+      - MCP_PORT=8452
+      - GPU_IDLE_TIMEOUT=${GPU_IDLE_TIMEOUT:-600}
+    volumes:
+      - /tmp/edit-banana:/tmp/edit-banana
+      - ./config:/app/config
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${GPU_ID:-0}"]
+              capabilities: [gpu]
+    shm_size: "4gb"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8450/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
